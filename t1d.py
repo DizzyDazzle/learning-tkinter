@@ -1,78 +1,108 @@
 import tkinter as tk
+from PIL import ImageTk, Image     #Python Image Library   to install run "pip install Pillow" in bash with no ""
+import pprint
+
+screen_width, screen_height = 350, 540
+ypadding = screen_height // 4
+
+font_size = int(((screen_width + screen_height) // 2) * 0.035)#this may look lie some genius shit but it was just a great guess
+main_font = f"Helvetica {font_size} bold"
+gap = font_size
+
+
+
 
 window = tk.Tk()
-window.geometry("325x325")
-
-bg_image = tk.PhotoImage(file = "insulin.png")
-frame = tk.Frame(window)
-ypad = 2
-
-halfdose_needed = tk.StringVar(frame)
-
-top_label = tk.Label(frame, text="Dosage for Corrections", image = bg_image
-)
-top_label.pack(pady = ypad)
-
-
-lbl_bg_input_text = tk.Label(frame, text = "Enter Current Blood Glucose:")
-ety_bg_input = tk.Entry(frame, width=5)
-lbl_bg_input_text.pack(pady = ypad)
-ety_bg_input.pack(pady = ypad)
-
-lbl_targetbg_input_text = tk.Label(frame, text = "What is your Target BG?")
-ety_targetbg_input = tk.Entry(frame,width=5)
-lbl_targetbg_input_text.pack(pady = ypad)
-ety_targetbg_input.pack(pady = ypad)
-
-lbl_correction_input_text = tk.Label(frame, text = "What is your Correction Factor?")
-ety_correction_input = tk.Entry(frame,width=5)
-lbl_correction_input_text.pack(pady = ypad)
-ety_correction_input.pack(pady = ypad)
-
+window.geometry(f"{screen_width}x{screen_height}")
+window.minsize(screen_width, screen_height)
+bg_image = Image.open("bkgrnd.png")
+canvas = tk.Canvas(window, width = screen_width, height = screen_height)
 
 
 def calculate():
     try:
-        bg = float(ety_bg_input.get())
-        target_bg = float(ety_targetbg_input.get())
-        correction = float(ety_correction_input.get())
-        result = (bg - target_bg) / correction
+        current_bg = float(ety_current_bg.get())
+        target_bg = float(ety_target_bg.get())
+        correction = float(ety_correction.get())
+        result = (current_bg - target_bg) / correction
         if halfdose_needed.get() == "yes":
             result = result / 2
-        if bg > 200:
-            ety_bg_input["bg"] = "red"
+        if current_bg > 200:
+            ety_current_bg["bg"] = "red"
         if result < 0:
             top = tk.Toplevel(window)
             top.geometry("100x100")
             top.title("Warning")
-            lbl_wrong_input_text = tk.Label(top, text = "Do not dose\ndue to no\ninsulin needed")
-            lbl_wrong_input_text.pack(pady = ypad)
-        ety_dosage_input.delete(0, tk.END)
-        ety_dosage_input.insert(0, str(result))
+            lbl_wrong = tk.Label(top, text = "Do not dose\ndue to no\ninsulin needed")
+            lbl_wrong.pack()
+        ety_dosage.delete(0, tk.END)
+        ety_dosage.insert(0, str(result))
     except:
         top = tk.Toplevel(window)
         top.geometry("100x100")
         top.title("Error")
-        lbl_wrong_input_text = tk.Label(top, text = "Please enter\nnumerical value")
-        lbl_wrong_input_text.pack(pady = ypad)
-
-lbl_halfdose_input_text = tk.Label(frame, text = "Do you need a half dose?")
-check = tk.Checkbutton(frame, text="Yes", variable = halfdose_needed,
-	    onvalue='yes', offvalue='no')
-check.deselect()
-lbl_halfdose_input_text.pack(pady = ypad)
-check.pack(pady = ypad)
-
-btn_calcuate = tk.Button(frame, text="Calculate Dosage", command = calculate)
-                        #(frame is parent, label, command runs a function)
-btn_calcuate.pack(pady = ypad)
-
-lbl_dosage_input_text = tk.Label(frame, text = "Your dosage is:")
-ety_dosage_input = tk.Entry(frame,width=5)
-lbl_dosage_input_text.pack(pady = ypad)
-ety_dosage_input.pack(pady = ypad)
+        lbl_wrong_text = tk.Label(top, text = "Please enter\nnumerical value")
+        lbl_wrong_text.pack()
 
 
 
-frame.pack(pady = ypad)
+
+
+def resize_window(e):#e is for event, anytime we resize the window window.bind calls this function and passes in the event of the window size changing so we can get new w and h
+    global bg_image_resize, new_bg, bg_image, screen_width, screen_height, font_size, main_font, ypadding
+    canvas.delete("all")
+    screen_width = e.width
+    screen_height = e.height
+    bg_image_resize = bg_image.resize((screen_width, screen_height), Image.LANCZOS)
+    new_bg = ImageTk.PhotoImage(bg_image_resize)
+    canvas.create_image(0, 0, image=new_bg, anchor="nw")
+    font_size = int(((screen_width + screen_height) // 2) * 0.035)
+    main_font = f"Helvetica {font_size} bold"
+    ypadding = screen_height // 4
+    load_widgits()
+
+
+halfdose_needed = tk.StringVar(window)
+ety_current_bg = tk.Entry(window, width=5, font=main_font)
+ety_target_bg = tk.Entry(window,width=5, font=main_font)
+ety_correction = tk.Entry(window,width=5, font=main_font)
+cb_halfdose_needed = tk.Checkbutton(window, text="Yes", variable = halfdose_needed,
+        onvalue='yes', offvalue='no', font=main_font)
+cb_halfdose_needed.deselect()
+btn_calcuate = tk.Button(window, text="Calculate Dosage", command = calculate, font=main_font)
+ety_dosage = tk.Entry(window,width=5, font=main_font)
+
+
+
+def load_widgits():
+    global ypadding
+
+
+    widgits = [
+            "Enter Current Blood Glucose:",
+            [ety_current_bg, None],
+            "What is your Target BG?",
+            [ety_target_bg, None],
+            "What is your Correction Factor?",
+            [ety_correction, None],
+            "Do you need a half dose?",
+            [cb_halfdose_needed, None],
+            [btn_calcuate, None],
+            "Your dosage is:",
+            [ety_dosage, None],
+        ]
+    for i in range(len(widgits)):
+
+        x = screen_width // 2
+        y = (i * font_size) + (i * gap) + ypadding
+        if type(widgits[i]) == str:
+            canvas.create_text(x, y + font_size // 4, text=widgits[i], font=main_font, fill="yellow", justify='center', anchor="n")
+        else:
+            canvas.create_window(x, y, anchor="n", window=widgits[i][0])
+            widgits[i][0].configure(font=main_font, fg="black", bg="white")
+
+
+canvas.pack(fill= "both", expand=True)
+canvas.bind("<Configure>", resize_window)
+canvas.addtag_all("all")
 window.mainloop()
